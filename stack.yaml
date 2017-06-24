@@ -1,0 +1,7 @@
+resolver: lts-8.20
+extra-deps:
+  # secret-sharing
+  - dice-entropy-conduit-1.0.0.1
+  - finite-field-0.8.0
+  - polynomial-0.7.3
+  - secret-sharing-1.0.0.3

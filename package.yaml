@@ -1,0 +1,38 @@
+name: ssss
+version: 0.1.0
+
+ghc-options: -Wall
+
+dependencies:
+  - base
+
+library:
+  source-dirs: src
+  dependencies:
+    - base64-bytestring
+    - bytestring
+    - secret-sharing
+    - text
+
+executables:
+  ssss:
+    source-dirs: app
+    main: Main.hs
+    dependencies:
+      - base64-bytestring
+      - bytestring
+      - optparse-generic
+      - QuickCheck
+      - secret-sharing
+      - ssss
+      - text
+
+tests:
+  props:
+    source-dirs: test
+    main: Props.hs
+    dependencies:
+      - QuickCheck
+      - ssss
+      - secret-sharing
+      - text
