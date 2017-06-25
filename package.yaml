@@ -6,13 +6,21 @@ ghc-options: -Wall
 dependencies:
   - base
 
+default-extensions:
+  - DeriveGeneric
+  - LambdaCase
+  - OverloadedStrings
+  - NoImplicitPrelude
+  - ViewPatterns
+
 library:
   source-dirs: src
   dependencies:
     - base64-bytestring
     - bytestring
+    - cryptohash-sha256
     - secret-sharing
-    - text
+    - utf8-string
 
 executables:
   ssss:
@@ -32,6 +40,7 @@ tests:
     source-dirs: test
     main: Props.hs
     dependencies:
+      - bytestring
       - QuickCheck
       - ssss
       - secret-sharing

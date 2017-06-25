@@ -1,8 +1,3 @@
-{-# language DeriveGeneric       #-}
-{-# language LambdaCase          #-}
-{-# language NoImplicitPrelude   #-}
-{-# language OverloadedStrings   #-}
-
 module Main where
 
 import Import
@@ -43,15 +38,15 @@ main' :: Args -> IO ()
 main' = \case
   -- Encode stdin
   Encode m n Nothing ->
-    LByteString.getContents >>= encode m n >>=
+    LByteString.getContents >>= encode' m n >>=
       mapM_ Char8.putStrLn . fmap encodeShare
 
   -- Encode a file, or the given bytes if reading the file fails.
   Encode m n (Just bytes) ->
     go1 <|> go2 >>= mapM_ Char8.putStrLn . fmap encodeShare
    where
-    go1 = LByteString.readFile (Text.unpack bytes) >>= encode m n
-    go2 = encode m n (LText.encodeUtf8 (LText.fromStrict bytes))
+    go1 = LByteString.readFile (Text.unpack bytes) >>= encode' m n
+    go2 = encode' m n (LText.encodeUtf8 (LText.fromStrict bytes))
 
   -- Decode a list of files, or the given bytes if reading the files fails.
   Decode xs ->
@@ -59,3 +54,6 @@ main' = \case
    where
     go1 = mapM (ByteString.readFile . Text.unpack) xs >>= decode
     go2 = decode (Text.encodeUtf8 <$> xs)
+
+encode' :: Int -> Int -> Secret -> IO (NonEmpty Share)
+encode' (fromIntegral -> m) (fromIntegral -> n) = encode m n

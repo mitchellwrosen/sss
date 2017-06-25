@@ -2,28 +2,40 @@
 
 module Main where
 
+import Import
 import Ssss
 
 import Test.QuickCheck
 import Test.QuickCheck.Monadic
 
 import qualified Crypto.SecretSharing.Internal as SSSS
+import qualified Data.ByteString as ByteString
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Text.Lazy as LText (pack)
 import qualified Data.Text.Lazy.Encoding as LText (encodeUtf8)
 
-arbitraryShareThreshold :: Gen Int
-arbitraryShareThreshold = arbitrarySizedNatural `suchThat` (> 0)
+prime :: Word16
+prime = fromIntegral SSSS.prime
 
-arbitraryShareNum :: Gen Int
+arbitraryShareNum :: Gen Word16
 arbitraryShareNum =
-  arbitrarySizedNatural `suchThat` (\n -> n > 0 && n < SSSS.prime)
+  arbitrarySizedNatural `suchThat` (\n -> n > 0 && n < prime)
 
-arbitraryShare :: Gen Share
-arbitraryShare = Share
-  <$> arbitraryShareThreshold
-  <*> arbitraryShareNum
-  <*> (NonEmpty.fromList <$> listOf1 arbitrarySizedNatural)
+arbitraryShare :: Gen (ByteString, Share)
+arbitraryShare = do
+  digest <- ByteString.pack <$> vectorOf 32 arbitrary
+  id     <- arbitraryShareNum
+  thresh <- arbitraryShareNum
+  vals   <- NonEmpty.fromList <$> listOf1 arbitrarySizedNatural
+
+  let share = Share
+        { shareDigest    = salt id digest
+        , shareId        = id
+        , shareThreshold = thresh
+        , shareVals      = vals
+        }
+
+  pure (digest, share)
 
 arbitrarySecret :: Gen Secret
 arbitrarySecret = LText.encodeUtf8 . LText.pack <$> listOf1 arbitrary
@@ -31,19 +43,20 @@ arbitrarySecret = LText.encodeUtf8 . LText.pack <$> listOf1 arbitrary
 prop_encodeDecodeShare :: Property
 prop_encodeDecodeShare =
   forAll arbitraryShare
-    (\share -> decodeShare (encodeShare share) === Just share)
+    (\(_, share) -> decodeShare (encodeShare share) === Just share)
 
 prop_toFromShare :: Property
 prop_toFromShare =
-  forAll arbitraryShare (\share -> toShare (fromShare share) === Just share)
+  forAll arbitraryShare
+    (\(digest, share) -> toShare digest (fromShare share) === Just share)
 
 prop_encodeNumShares :: Property
 prop_encodeNumShares = monadicIO $ do
-  m <- pick arbitraryShareThreshold
-  n <- pick (choose (m, SSSS.prime - 1))
+  m <- pick arbitraryShareNum
+  n <- pick (choose (m, prime - 1))
   bytes  <- pick arbitrarySecret
   shares <- run (encode m n bytes)
-  assert (length shares == n)
+  assert (length shares == fromIntegral n)
 
 return []
 main :: IO ()

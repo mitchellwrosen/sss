@@ -10,13 +10,15 @@ cabal-version:  >= 1.10
 library
   hs-source-dirs:
       src
+  default-extensions: DeriveGeneric LambdaCase OverloadedStrings NoImplicitPrelude ViewPatterns
   ghc-options: -Wall
   build-depends:
       base
     , base64-bytestring
     , bytestring
+    , cryptohash-sha256
     , secret-sharing
-    , text
+    , utf8-string
   exposed-modules:
       Import
       Ssss
@@ -26,6 +28,7 @@ executable ssss
   main-is: Main.hs
   hs-source-dirs:
       app
+  default-extensions: DeriveGeneric LambdaCase OverloadedStrings NoImplicitPrelude ViewPatterns
   ghc-options: -Wall
   build-depends:
       base
@@ -43,9 +46,11 @@ test-suite props
   main-is: Props.hs
   hs-source-dirs:
       test
+  default-extensions: DeriveGeneric LambdaCase OverloadedStrings NoImplicitPrelude ViewPatterns
   ghc-options: -Wall
   build-depends:
       base
+    , bytestring
     , QuickCheck
     , ssss
     , secret-sharing
