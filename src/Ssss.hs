@@ -1,6 +1,7 @@
 module Ssss where
 
 import Import
+import Validation
 
 import Control.Exception (Exception(..), evaluate, throwIO)
 import Data.Bits
@@ -14,8 +15,9 @@ import qualified Crypto.SecretSharing as SSSS
 import qualified Crypto.SecretSharing.Internal as SSSS
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Base64 as Base64
-import qualified Data.ByteString.Char8 as Char8
 import qualified Data.ByteString.UTF8 as UTF8
+import qualified Data.Text as Text (unpack)
+import qualified Data.Text.Encoding as Text (encodeUtf8)
 
 type Secret
   = LByteString
@@ -33,8 +35,8 @@ data SsssException
   | RequireTooManyShares Word16 Word16
   | TooFewShares Word16 Word16
   | InconsistentShares
-  | CorruptShares (NonEmpty ByteString)
-  | DecodingError
+  | MalformedShares (NonEmpty Text)
+  | MalformedKey
   | EncodingError
   deriving (Show, Typeable)
 
@@ -57,11 +59,11 @@ instance Exception SsssException where
     InconsistentShares ->
       "The shares you provided are not all of the same secret."
 
-    CorruptShares (toList -> ss) ->
-      unlines ("The following share(s) are corrupt:" : map Char8.unpack ss)
+    MalformedShares (toList -> ss) ->
+      unlines ("The following share(s) are malformed:" : map Text.unpack ss)
 
-    DecodingError ->
-      "An unexpected error occurred while decoding a share."
+    MalformedKey ->
+      "The key you provided is malformed."
 
     EncodingError ->
       "An unexpected error occurred while encoding a share."
@@ -77,11 +79,11 @@ encode m n bytes = do
     Just [] -> error "encode: empty list" -- impossible
     Just (s:ss) -> pure (s:|ss)
 
-decode :: NonEmpty ByteString -> IO Secret
+decode :: NonEmpty Text -> IO Secret
 decode (toList -> shares) =
   case traverse decodeShare shares of
-    Nothing -> throwIO DecodingError
-    Just (nubOn shareId -> ss@((shareThreshold -> n):_)) -> do
+    Errors shares' -> throwIO (MalformedShares shares')
+    Success (nubOn shareId -> ss@((shareThreshold -> n):_)) -> do
       let m = genericLength ss
 
       when (m < n) (throwIO (TooFewShares m n))
@@ -94,30 +96,31 @@ decode (toList -> shares) =
       let digest :: ByteString
           digest = SHA.hashlazy secret
 
-          validate :: (Int, Share) -> Maybe ByteString
+          validate :: (Int, Share) -> Maybe Text
           validate (i, s) = do
             guard (salt (shareId s) digest /= shareDigest s)
             pure (shares !! i)
 
       case mapMaybe validate (zip [0..] ss) of
         [] -> pure secret
-        x:xs -> throwIO (CorruptShares (x:|xs))
+        x:xs -> throwIO (MalformedShares (x:|xs))
 
 encodeShare :: Share -> ByteString
 encodeShare (Share d (fromIntegral -> m) (fromIntegral -> n) vs) =
   Base64.encode (d ++ UTF8.fromString (chr m : chr n : map chr (toList vs)))
 
-decodeShare :: ByteString -> Maybe Share
-decodeShare share = do
-  Right share' <- pure (Base64.decode share)
-  let (d, ds) = ByteString.splitAt 32 share'
-  c1:c2:c3:cs <- pure (UTF8.toString ds)
-  pure $ Share
-    { shareDigest    = d
-    , shareId        = fromIntegral (ord c1)
-    , shareThreshold = fromIntegral (ord c2)
-    , shareVals      = map ord (c3:|cs)
-    }
+decodeShare :: Text -> Validation (NonEmpty Text) Share
+decodeShare share =
+  maybe (Errors (pure share)) Success $ do
+    Right share' <- pure (Base64.decode (Text.encodeUtf8 share))
+    let (d, ds) = ByteString.splitAt 32 share'
+    c1:c2:c3:cs <- pure (UTF8.toString ds)
+    pure $ Share
+      { shareDigest    = d
+      , shareId        = fromIntegral (ord c1)
+      , shareThreshold = fromIntegral (ord c2)
+      , shareVals      = map ord (c3:|cs)
+      }
 
 toShare :: ByteString -> SSSS.Share -> Maybe Share
 toShare digest share = do
@@ -142,6 +145,3 @@ salt (split16 -> (x, y)) bytes = SHA.hash (ByteString.pack [x, y] ++ bytes)
 
 split16 :: Word16 -> (Word8, Word8)
 split16 w = (fromIntegral (w `shiftR` 8), fromIntegral w)
-
--- merge16 :: (Word8, Word8) -> Word16
--- merge16 (x, y) = shiftL (fromIntegral x) 8 .|. fromIntegral y

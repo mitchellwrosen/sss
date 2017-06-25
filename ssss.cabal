@@ -10,35 +10,37 @@ cabal-version:  >= 1.10
 library
   hs-source-dirs:
       src
-  default-extensions: DeriveGeneric LambdaCase OverloadedStrings NoImplicitPrelude ViewPatterns
+  default-extensions: DeriveFunctor DeriveGeneric FunctionalDependencies LambdaCase OverloadedStrings PatternSynonyms MultiParamTypeClasses NoImplicitPrelude ViewPatterns
   ghc-options: -Wall
   build-depends:
       base
-    , base64-bytestring
     , bytestring
-    , cryptohash-sha256
     , secret-sharing
+    , text
+    , base64-bytestring
+    , cryptohash-sha256
     , utf8-string
   exposed-modules:
       Import
       Ssss
+      Validation
   default-language: Haskell2010
 
 executable ssss
   main-is: Main.hs
   hs-source-dirs:
       app
-  default-extensions: DeriveGeneric LambdaCase OverloadedStrings NoImplicitPrelude ViewPatterns
+  default-extensions: DeriveFunctor DeriveGeneric FunctionalDependencies LambdaCase OverloadedStrings PatternSynonyms MultiParamTypeClasses NoImplicitPrelude ViewPatterns
   ghc-options: -Wall
   build-depends:
       base
-    , base64-bytestring
     , bytestring
+    , secret-sharing
+    , text
+    , cryptonite
     , optparse-generic
     , QuickCheck
-    , secret-sharing
     , ssss
-    , text
   default-language: Haskell2010
 
 test-suite props
@@ -46,13 +48,13 @@ test-suite props
   main-is: Props.hs
   hs-source-dirs:
       test
-  default-extensions: DeriveGeneric LambdaCase OverloadedStrings NoImplicitPrelude ViewPatterns
+  default-extensions: DeriveFunctor DeriveGeneric FunctionalDependencies LambdaCase OverloadedStrings PatternSynonyms MultiParamTypeClasses NoImplicitPrelude ViewPatterns
   ghc-options: -Wall
   build-depends:
       base
     , bytestring
-    , QuickCheck
-    , ssss
     , secret-sharing
     , text
+    , QuickCheck
+    , ssss
   default-language: Haskell2010
