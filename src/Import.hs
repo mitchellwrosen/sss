@@ -11,11 +11,13 @@ module Import
 
 import Data.ByteString as X (ByteString)
 import Control.Applicative as X
+import Control.Exception as X (Exception, SomeException, evaluate)
 import Control.Monad as X
 import Data.List as X (group)
 import Data.Maybe as X
 import Data.Semigroup as X (Semigroup)
 import Data.Text as X (Text)
+import Data.Typeable as X (Typeable)
 import Data.Word as X
 import GHC.Exts as X (toList)
 import Prelude as X hiding ((++), getContents, id, map, readFile)

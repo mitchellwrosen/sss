@@ -5,8 +5,9 @@ module Main where
 import Import
 import Ssss
 
-import Control.Exception
-  (Exception(..), SomeException, catch, evaluate, throwIO)
+import Control.Exception (Exception(..), catch, throwIO)
+import Crypto.Cipher.Salsa.Streaming (SalsaException)
+import Control.Monad.Trans.Resource (ResourceT, runResourceT)
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Text (unpack)
 import Data.Text.Lazy.Encoding (encodeUtf8)
@@ -15,10 +16,11 @@ import Options.Generic
 import System.IO (hFlush, hPutStrLn, stderr, stdout)
 import System.Exit (exitFailure)
 
-import qualified Crypto.Cipher.Salsa as Salsa
+import qualified Crypto.Cipher.Salsa.Streaming as Salsa
 import qualified Crypto.Random as Random
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Char8 as Char8
+import qualified Data.ByteString.Streaming as B
 
 data Args
   = Encode Int Int (Maybe Text)
@@ -77,34 +79,23 @@ main' = \case
   -- Encrypt and encode stdin
   Encrypt' m n Nothing -> do
     key <- Random.getRandomBytes 16 :: IO ByteString
-    shares <- encode m n (lazy key)
 
+    shares <- encode m n (lazy key)
     mapM_ (Char8.putStrLn . encodeShare) shares
 
-    (secret, _) <-
-      Salsa.combine (Salsa.initialize rounds key nonce) <$>
-        (getContents :: IO ByteString)
-
-    hPut stderr secret
-    hFlush stderr
+    B.hPut stderr (Salsa.combine rounds key nonce B.stdin)
 
   -- Decrypt a file (or stdin) with a list of shares.
-  Decrypt "-" shares -> decrypt getContents shares
-  Decrypt path shares -> decrypt (readFile (unpack path)) shares
+  Decrypt "-" shares -> decrypt B.getContents shares
+  Decrypt path shares -> decrypt (B.readFile (unpack path)) shares
 
-decrypt :: IO ByteString -> NonEmpty Text -> IO ()
-decrypt getSecret shares = do
+decrypt :: B.ByteString (ResourceT IO) () -> NonEmpty Text -> IO ()
+decrypt secret shares = do
   key <- decode shares
 
-  state <-
-    catch
-      (evaluate (Salsa.initialize rounds (strict key) nonce))
-      (\(_ :: SomeException) -> throwIO MalformedKey)
-
-  (secret, _) <- Salsa.combine state <$> getSecret
-
-  hPut stdout secret
-  hFlush stdout
+  catch
+    (runResourceT (B.stdout (Salsa.combine rounds (strict key) nonce secret)))
+    (\(_ :: SalsaException) -> throwIO MalformedKey)
 
 -- Salsa rounds (8, 12, 20)
 rounds :: Int

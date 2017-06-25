@@ -24,7 +24,12 @@ library:
   source-dirs: src
   dependencies:
     - base64-bytestring
-    - cryptohash-sha256
+    - cryptohash-sha256 # TODO replace with cryptonite
+    - cryptonite
+    - exceptions
+    - memory
+    - streaming
+    - streaming-bytestring
     - utf8-string
 
 executables:
@@ -35,7 +40,9 @@ executables:
       - cryptonite
       - optparse-generic
       - QuickCheck
+      - resourcet
       - ssss
+      - streaming-bytestring
 
 tests:
   props:
