@@ -5,11 +5,10 @@ module Main where
 import Import
 import Ssss
 
-import Control.Exception (Exception(..), catch, throwIO)
+import Control.Exception (Exception(..), catch)
 import Crypto.Cipher.Salsa.Streaming (SalsaException)
 import Control.Monad.Trans.Resource (ResourceT, runResourceT)
 import Data.List.NonEmpty (NonEmpty(..))
-import Data.Text (unpack)
 import Data.Text.Lazy.Encoding (encodeUtf8)
 import GHC.Generics (Generic)
 import Options.Generic
@@ -19,7 +18,6 @@ import System.Exit (exitFailure)
 import qualified Crypto.Cipher.Salsa.Streaming as Salsa
 import qualified Crypto.Random as Random
 import qualified Data.ByteString as ByteString
-import qualified Data.ByteString.Char8 as Char8
 import qualified Data.ByteString.Streaming as B
 
 data Args
@@ -51,12 +49,12 @@ main' = \case
   Encode' m n Nothing -> do
     secret <- getContents
     shares <- encode m n secret
-    mapM_ (Char8.putStrLn . encodeShare) shares
+    mapM_ (putStrLn . encodeShare) shares
 
   -- Encode a file, or the given bytes if reading the file fails.
   Encode' m n (Just bytes) -> do
     shares <- go1 <|> go2
-    mapM_ (Char8.putStrLn . encodeShare) shares
+    mapM_ (putStrLn . encodeShare) shares
    where
     go1 :: IO (NonEmpty Share)
     go1 = do
@@ -81,7 +79,7 @@ main' = \case
     key <- Random.getRandomBytes 16 :: IO ByteString
 
     shares <- encode m n (lazy key)
-    mapM_ (Char8.putStrLn . encodeShare) shares
+    mapM_ (putStrLn . encodeShare) shares
 
     B.hPut stderr (Salsa.combine rounds key nonce B.stdin)
 
@@ -95,7 +93,7 @@ decrypt secret shares = do
 
   catch
     (runResourceT (B.stdout (Salsa.combine rounds (strict key) nonce secret)))
-    (\(_ :: SalsaException) -> throwIO MalformedKey)
+    (\(_ :: SalsaException) -> throw MalformedKey)
 
 -- Salsa rounds (8, 12, 20)
 rounds :: Int

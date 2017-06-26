@@ -6,6 +6,7 @@ ghc-options: -Wall
 default-extensions:
   - DeriveFunctor
   - DeriveGeneric
+  - FlexibleInstances
   - FunctionalDependencies
   - LambdaCase
   - OverloadedStrings
@@ -21,7 +22,9 @@ dependencies:
   - text
 
 library:
-  source-dirs: src
+  source-dirs:
+    - src
+    - src/extra
   dependencies:
     - base64-bytestring
     - cryptohash-sha256 # TODO replace with cryptonite

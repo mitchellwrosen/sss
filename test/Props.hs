@@ -4,12 +4,17 @@ module Main where
 
 import Import
 import Ssss
+import Ssss.Decode (decodeShare, fromShare)
+import Ssss.Encode (toShare)
+import Ssss.Utils (salt)
 
-import Test.QuickCheck
+import Data.Validation (Validation(Success))
+import Test.QuickCheck hiding (Success)
 import Test.QuickCheck.Monadic
 
 import qualified Crypto.SecretSharing.Internal as SSSS
 import qualified Data.ByteString as ByteString
+import qualified Data.ByteString64 as ByteString64
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Text.Lazy as LText (pack)
 import qualified Data.Text.Lazy.Encoding as LText (encodeUtf8)
@@ -43,7 +48,8 @@ arbitrarySecret = LText.encodeUtf8 . LText.pack <$> listOf1 arbitrary
 prop_encodeDecodeShare :: Property
 prop_encodeDecodeShare =
   forAll arbitraryShare
-    (\(_, share) -> decodeShare (encodeShare share) === Just share)
+    (\(_, share) ->
+      decodeShare (ByteString64.asText (encodeShare share)) === Success share)
 
 prop_toFromShare :: Property
 prop_toFromShare =
