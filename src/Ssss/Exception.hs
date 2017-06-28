@@ -19,6 +19,7 @@ data SsssException
   | MalformedShares (NonEmpty Text)
   | MalformedKey
   | EncodingError
+  | StderrIsTTY
   deriving (Show, Typeable)
 
 instance Exception SsssException where
@@ -49,3 +50,5 @@ instance Exception SsssException where
     EncodingError ->
       "An unexpected error occurred while encoding a share."
 
+    StderrIsTTY ->
+      "Standard error is connected to a terminal; please redirect it to a file."

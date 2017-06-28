@@ -3,97 +3,101 @@
 module Main where
 
 import Import
+
+import Args (Args(..), parseArgs)
 import Ssss
 
 import Control.Exception (Exception(..), catch)
 import Crypto.Cipher.Salsa.Streaming (SalsaException)
 import Control.Monad.Trans.Resource (ResourceT, runResourceT)
-import Data.List.NonEmpty (NonEmpty(..))
-import Data.Text.Lazy.Encoding (encodeUtf8)
-import GHC.Generics (Generic)
-import Options.Generic
-import System.IO (hFlush, hPutStrLn, stderr, stdout)
+import Data.Text.Encoding (encodeUtf8)
+import System.IO (hPutStrLn, stderr, stdout)
 import System.Exit (exitFailure)
+import System.Posix.IO (stdError)
+import System.Posix.Terminal (queryTerminal)
 
 import qualified Crypto.Cipher.Salsa.Streaming as Salsa
 import qualified Crypto.Random as Random
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Streaming as B
 
-data Args
-  = Encode Int Int (Maybe Text)
-  | Decode (NonEmpty Text)
-  | Encrypt Int Int (Maybe Text)
-  | Decrypt Text (NonEmpty Text)
-  deriving (Generic, Show)
-
-instance ParseRecord Args
-
-pattern Encode' :: Word16 -> Word16 -> Maybe Text -> Args
-pattern Encode' m n s <- Encode (fromIntegral -> m) (fromIntegral -> n) s
-
-pattern Encrypt' :: Word16 -> Word16 -> Maybe Text -> Args
-pattern Encrypt' m n s <- Encrypt (fromIntegral -> m) (fromIntegral -> n) s
-
 main :: IO ()
 main =
   catch
-    (getRecord "ssss" >>= main')
+    (parseArgs >>= \case
+      Encode  a b c -> doEncode  a b c
+      Decode  a     -> doDecode  a
+      Encrypt a b c -> doEncrypt a b c
+      Decrypt a b   -> doDecrypt a b)
     (\e -> do
       hPutStrLn stderr (displayException (e :: SsssException))
       exitFailure)
 
-main' :: Args -> IO ()
-main' = \case
-  -- Encode stdin
-  Encode' m n Nothing -> do
+doEncode :: Word16 -> Word16 -> Maybe Text -> IO ()
+doEncode m n = \case
+  Nothing -> do
     secret <- getContents
     shares <- encode m n secret
     mapM_ (putStrLn . encodeShare) shares
 
-  -- Encode a file, or the given bytes if reading the file fails.
-  Encode' m n (Just bytes) -> do
-    shares <- go1 <|> go2
+  Just bytes -> do
+    shares <- tryBinaryFile bytes (encode m n . lazy)
     mapM_ (putStrLn . encodeShare) shares
-   where
-    go1 :: IO (NonEmpty Share)
-    go1 = do
-      secret <- readFile (unpack bytes)
-      encode m n secret
 
-    go2 :: IO (NonEmpty Share)
-    go2 = encode m n (encodeUtf8 (lazy bytes))
+doDecode :: NonEmpty Text -> IO ()
+doDecode = tryTextFiles >=> decode >=> hPut stdout
 
-  -- Decode a list of shares, which are interpreted as filenames, then string
-  -- literals.
-  Decode shares -> do
-    secret <- go1 <|> go2
-    hPut stdout secret
-    hFlush stdout
-   where
-    go1 = mapM (readFile . unpack) shares >>= decode
-    go2 = decode shares
-
-  -- Encrypt and encode stdin
-  Encrypt' m n Nothing -> do
+doEncrypt :: Word16 -> Word16 -> Maybe Text -> IO ()
+doEncrypt m n mbytes = do
+  -- Doesn't make sense to put binary data to the terminal
+  tty <- queryTerminal stdError
+  if tty
+    then throw StderrIsTTY
+    else
+      case mbytes of
+        Nothing -> encrypt B.stdin
+        Just path -> tryBinaryStream path encrypt
+ where
+  encrypt :: B.ByteString (ResourceT IO) () -> IO ()
+  encrypt secret = do
     key <- Random.getRandomBytes 16 :: IO ByteString
+    runResourceT (B.hPut stderr (Salsa.combine rounds key nonce secret))
 
     shares <- encode m n (lazy key)
     mapM_ (putStrLn . encodeShare) shares
 
-    B.hPut stderr (Salsa.combine rounds key nonce B.stdin)
+doDecrypt :: Text -> NonEmpty Text -> IO ()
+doDecrypt = \case
+  "-"  -> decrypt B.getContents
+  path -> decrypt (B.readFile (unpack path))
+ where
+  decrypt :: B.ByteString (ResourceT IO) () -> NonEmpty Text -> IO ()
+  decrypt secret = tryTextFiles >=> go
+   where
+    go :: NonEmpty Text -> IO ()
+    go shares = do
+      key <- decode shares
+      catch
+        (runResourceT
+          (B.stdout (Salsa.combine rounds (strict key) nonce secret)))
+        (\(_ :: SalsaException) -> throw MalformedKey)
 
-  -- Decrypt a file (or stdin) with a list of shares.
-  Decrypt "-" shares -> decrypt B.getContents shares
-  Decrypt path shares -> decrypt (B.readFile (unpack path)) shares
+-- Given a 'Text' that might be a file path, either call the continuation with
+-- the contents of the file, or else the UTF8-encoded 'Text' itself.
+tryBinaryFile :: Text -> (ByteString -> IO r) -> IO r
+tryBinaryFile path k = (readFile (unpack path) >>= k) <|> k (encodeUtf8 path)
 
-decrypt :: B.ByteString (ResourceT IO) () -> NonEmpty Text -> IO ()
-decrypt secret shares = do
-  key <- decode shares
+tryBinaryStream :: Text -> (B.ByteString (ResourceT IO) () -> IO ()) -> IO ()
+tryBinaryStream (unpack -> path) k =
+  k (B.readFile path) <|> k (B.chunk (pack path))
 
-  catch
-    (runResourceT (B.stdout (Salsa.combine rounds (strict key) nonce secret)))
-    (\(_ :: SalsaException) -> throw MalformedKey)
+-- Given a 'Text' that might be a file path, either call the continuation with
+-- the contents of the file, or else the 'Text' itself.
+tryTextFile :: Text -> CIO Text
+tryTextFile path = CIO (\k -> (readFile (unpack path) >>= k) <|> k path)
+
+tryTextFiles :: Traversable t => t Text -> IO (t Text)
+tryTextFiles = lower . traverse tryTextFile
 
 -- Salsa rounds (8, 12, 20)
 rounds :: Int
@@ -102,3 +106,23 @@ rounds = 20
 -- Salsa nonce (64 or 96 bits)
 nonce :: ByteString
 nonce = ByteString.replicate 8 0
+
+--------------------------------------------------------------------------------
+-- Codensity IO
+
+newtype CIO a
+  = CIO { (>>-) :: forall r. (a -> IO r) -> IO r }
+
+lower :: CIO a -> IO a
+lower = (>>- pure)
+
+instance Functor CIO where
+  fmap f x = CIO (\k -> x >>- \a -> k (f a))
+
+instance Applicative CIO where
+  pure = return
+  (<*>) = ap
+
+instance Monad CIO where
+  return x = CIO (\k -> k x)
+  x >>= f = CIO (\k -> x >>- \a -> f a >>- k)

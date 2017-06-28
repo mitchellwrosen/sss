@@ -18,6 +18,7 @@ import Control.Monad as X
 import Data.List as X (group)
 import Data.List.NonEmpty as X (NonEmpty)
 import Data.Maybe as X
+import Data.Monoid as X ((<>))
 import Data.Semigroup as X (Semigroup)
 import Data.Text as X (Text)
 import Data.Typeable as X (Typeable)
@@ -29,15 +30,15 @@ import System.IO as X (Handle)
 import Control.Monad.Catch (MonadThrow, throwM)
 import Data.Function
 import Data.List (nubBy)
-import Data.Semigroup ((<>))
 
 import qualified Data.ByteString.Lazy
+import qualified Data.Semigroup ((<>))
 
 type LByteString
   = Data.ByteString.Lazy.ByteString
 
 (++) :: Semigroup a => a -> a -> a
-(++) = (<>)
+(++) = (Data.Semigroup.<>)
 
 hush :: Either a b -> Maybe b
 hush = either (const Nothing) Just

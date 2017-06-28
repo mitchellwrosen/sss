@@ -5,6 +5,7 @@ import Prelude
 import System.IO (Handle)
 
 import qualified Data.ByteString
+import qualified Data.ByteString.Char8
 import qualified Data.ByteString.Lazy
 import qualified Data.Text
 import qualified Data.Text.IO
@@ -50,6 +51,9 @@ instance Strict Data.ByteString.Lazy.ByteString Data.ByteString.ByteString where
 
 class Pack a b where
   pack :: a -> b
+
+instance Pack [Char] Data.ByteString.ByteString where
+  pack = Data.ByteString.Char8.pack
 
 instance Pack [Word8] Data.ByteString.ByteString where
   pack = Data.ByteString.pack

@@ -10,9 +10,9 @@ default-extensions:
   - FunctionalDependencies
   - LambdaCase
   - OverloadedStrings
-  - PatternSynonyms
   - MultiParamTypeClasses
   - NoImplicitPrelude
+  - RankNTypes
   - ViewPatterns
 
 dependencies:
@@ -40,12 +40,14 @@ executables:
     source-dirs: app
     main: Main.hs
     dependencies:
+      - ansi-wl-pprint
       - cryptonite
-      - optparse-generic
+      - optparse-applicative >= 0.14.0.0
       - QuickCheck
       - resourcet
       - ssss
       - streaming-bytestring
+      - unix
 
 tests:
   props:

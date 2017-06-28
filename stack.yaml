@@ -1,5 +1,6 @@
 resolver: lts-8.20
 extra-deps:
+  - optparse-applicative-0.14.0.0
   # secret-sharing
   - dice-entropy-conduit-1.0.0.1
   - finite-field-0.8.0

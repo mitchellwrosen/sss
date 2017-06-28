@@ -11,7 +11,7 @@ library
   hs-source-dirs:
       src
       src/extra
-  default-extensions: DeriveFunctor DeriveGeneric FlexibleInstances FunctionalDependencies LambdaCase OverloadedStrings PatternSynonyms MultiParamTypeClasses NoImplicitPrelude ViewPatterns
+  default-extensions: DeriveFunctor DeriveGeneric FlexibleInstances FunctionalDependencies LambdaCase OverloadedStrings MultiParamTypeClasses NoImplicitPrelude RankNTypes ViewPatterns
   ghc-options: -Wall
   build-depends:
       base
@@ -44,19 +44,23 @@ executable ssss
   main-is: Main.hs
   hs-source-dirs:
       app
-  default-extensions: DeriveFunctor DeriveGeneric FlexibleInstances FunctionalDependencies LambdaCase OverloadedStrings PatternSynonyms MultiParamTypeClasses NoImplicitPrelude ViewPatterns
+  default-extensions: DeriveFunctor DeriveGeneric FlexibleInstances FunctionalDependencies LambdaCase OverloadedStrings MultiParamTypeClasses NoImplicitPrelude RankNTypes ViewPatterns
   ghc-options: -Wall
   build-depends:
       base
     , bytestring
     , secret-sharing
     , text
+    , ansi-wl-pprint
     , cryptonite
-    , optparse-generic
+    , optparse-applicative >= 0.14.0.0
     , QuickCheck
     , resourcet
     , ssss
     , streaming-bytestring
+    , unix
+  other-modules:
+      Args
   default-language: Haskell2010
 
 test-suite props
@@ -64,7 +68,7 @@ test-suite props
   main-is: Props.hs
   hs-source-dirs:
       test
-  default-extensions: DeriveFunctor DeriveGeneric FlexibleInstances FunctionalDependencies LambdaCase OverloadedStrings PatternSynonyms MultiParamTypeClasses NoImplicitPrelude ViewPatterns
+  default-extensions: DeriveFunctor DeriveGeneric FlexibleInstances FunctionalDependencies LambdaCase OverloadedStrings MultiParamTypeClasses NoImplicitPrelude RankNTypes ViewPatterns
   ghc-options: -Wall
   build-depends:
       base
