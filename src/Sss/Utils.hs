@@ -1,10 +1,10 @@
-module Ssss.Utils
+module Sss.Utils
   ( salt
   ) where
 
 import Import
 
-import Ssss.Types
+import Sss.Types
 
 import Data.Bits (shiftR)
 

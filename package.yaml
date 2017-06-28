@@ -1,4 +1,4 @@
-name: ssss
+name: sss
 version: 0.1.0
 
 ghc-options: -Wall
@@ -36,7 +36,7 @@ library:
     - utf8-string
 
 executables:
-  ssss:
+  sss:
     source-dirs: app
     main: Main.hs
     dependencies:
@@ -45,7 +45,7 @@ executables:
       - optparse-applicative >= 0.14.0.0
       - QuickCheck
       - resourcet
-      - ssss
+      - sss
       - streaming-bytestring
       - unix
 
@@ -55,4 +55,4 @@ tests:
     main: Props.hs
     dependencies:
       - QuickCheck
-      - ssss
+      - sss

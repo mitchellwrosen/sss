@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 
-name:           ssss
+name:           sss
 version:        0.1.0
 build-type:     Simple
 cabal-version:  >= 1.10
@@ -29,18 +29,18 @@ library
   exposed-modules:
       BytesClasses
       Import
-      Ssss
-      Ssss.Decode
-      Ssss.Encode
-      Ssss.Exception
-      Ssss.Types
-      Ssss.Utils
+      Sss
+      Sss.Decode
+      Sss.Encode
+      Sss.Exception
+      Sss.Types
+      Sss.Utils
       Crypto.Cipher.Salsa.Streaming
       Data.ByteString64
       Data.Validation
   default-language: Haskell2010
 
-executable ssss
+executable sss
   main-is: Main.hs
   hs-source-dirs:
       app
@@ -56,7 +56,7 @@ executable ssss
     , optparse-applicative >= 0.14.0.0
     , QuickCheck
     , resourcet
-    , ssss
+    , sss
     , streaming-bytestring
     , unix
   other-modules:
@@ -76,5 +76,5 @@ test-suite props
     , secret-sharing
     , text
     , QuickCheck
-    , ssss
+    , sss
   default-language: Haskell2010

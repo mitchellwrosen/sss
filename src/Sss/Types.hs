@@ -1,4 +1,4 @@
-module Ssss.Types
+module Sss.Types
   ( Secret
   , SecretDigest
   , Share(..)

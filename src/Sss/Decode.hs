@@ -1,4 +1,4 @@
-module Ssss.Decode
+module Sss.Decode
   ( decode
     -- ** Internal
   , decodeShare
@@ -7,9 +7,9 @@ module Ssss.Decode
 
 import Import
 
-import Ssss.Exception
-import Ssss.Types
-import Ssss.Utils (salt)
+import Sss.Exception
+import Sss.Types
+import Sss.Utils (salt)
 
 import Data.Char (ord)
 import Data.List (genericLength)

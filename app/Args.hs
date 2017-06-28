@@ -33,7 +33,7 @@ parseArgs = customExecParser (prefs prefsMod) parserInfo
     info
       (helper <*> parser)
       (mconcat
-        [ header "ssss - Shamir's Secret Sharing"
+        [ header "sss - Shamir's Secret Sharing"
         ])
 
   parser :: Parser Args
@@ -59,11 +59,11 @@ encodeCommand = mconcat
  where
   hdr :: Doc
   hdr = vsep
-    [ "ssss encode - Shamir's Secret Sharing"
+    [ "sss encode - Shamir's Secret Sharing"
     , ""
     , "Encode a secret as " <> bold "N" <> " shares such that only " <> bold "K" <> " are required to decode it."
     , ""
-    , "Share length is proportional to secret length, so prefer " <> bold "ssss encrypt" <> " for"
+    , "Share length is proportional to secret length, so prefer " <> bold "sss encrypt" <> " for"
     , "secrets longer than 256 bits."
     , ""
     , "If a secret is not provided, it will be read from standard input."
@@ -72,9 +72,9 @@ encodeCommand = mconcat
   foot :: Doc
   foot = vsep
     [ "Examples:"
-    , "  ssss encode 3 5 'Hello, world!'"
-    , "  ssss encode 3 5 secret.txt"
-    , "  cat secret.txt | ssss encode 3 5"
+    , "  sss encode 3 5 'Hello, world!'"
+    , "  sss encode 3 5 secret.txt"
+    , "  cat secret.txt | sss encode 3 5"
     ]
 
   parser :: Parser Args
@@ -100,7 +100,7 @@ decodeCommand = mconcat
  where
   hdr :: Doc
   hdr = vsep
-    [ "ssss decode - Shamir's Secret Sharing"
+    [ "sss decode - Shamir's Secret Sharing"
     , ""
     , "Decode a secret with " <> bold "K" <> " shares."
     ]
@@ -108,8 +108,8 @@ decodeCommand = mconcat
   foot :: Doc
   foot = vsep
     [ "Examples:"
-    , "  ssss decode «share1» «share2» «share3»"
-    , "  ssss decode share1.txt share2.txt share3.txt"
+    , "  sss decode «share1» «share2» «share3»"
+    , "  sss decode share1.txt share2.txt share3.txt"
     ]
 
   parser :: Parser Args
@@ -133,7 +133,7 @@ encryptCommand = mconcat
  where
   hdr :: Doc
   hdr = vsep
-    [ "ssss encrypt - Shamir's Secret Sharing"
+    [ "sss encrypt - Shamir's Secret Sharing"
     , ""
     , "Encrypt a secret using the Salsa20 stream cipher, then encode the encryption key"
     , "as " <> bold "N" <> " shares such that only " <> bold "K" <> " are required to decode it."
@@ -147,8 +147,8 @@ encryptCommand = mconcat
   foot :: Doc
   foot = vsep
     [ "Examples:"
-    , "  ssss encrypt 3 5 plain.txt 2>cipher.txt"
-    , "  cat plain.txt | ssss encrypt 3 5 2>cipher.txt"
+    , "  sss encrypt 3 5 plain.txt 2>cipher.txt"
+    , "  cat plain.txt | sss encrypt 3 5 2>cipher.txt"
     ]
 
   parser :: Parser Args
@@ -174,7 +174,7 @@ decryptCommand = mconcat
  where
   hdr :: Doc
   hdr = vsep
-    [ "ssss encrypt - Shamir's Secret Sharing"
+    [ "sss encrypt - Shamir's Secret Sharing"
     , ""
     , "Decrypt a secret with " <> bold "K" <> " shares."
     ]
@@ -182,10 +182,10 @@ decryptCommand = mconcat
   foot :: Doc
   foot = vsep
     [ "Examples:"
-    , "  ssss decrypt cipher.txt «share1» «share2» «share3»"
-    , "  ssss decrypt cipher.txt share1.txt share2.txt share3.txt"
-    , "  cat cipher.txt | ssss decrypt - «share1» «share2» «share3»"
-    , "  cat cipher.txt | ssss decrypt - share1.txt share2.txt share3.txt"
+    , "  sss decrypt cipher.txt «share1» «share2» «share3»"
+    , "  sss decrypt cipher.txt share1.txt share2.txt share3.txt"
+    , "  cat cipher.txt | sss decrypt - «share1» «share2» «share3»"
+    , "  cat cipher.txt | sss decrypt - share1.txt share2.txt share3.txt"
     ]
 
   parser :: Parser Args

@@ -1,16 +1,14 @@
-module Ssss.Exception
-  ( SsssException(..)
+module Sss.Exception
+  ( SssException(..)
   ) where
 
 import Import
 
-import Ssss.Types
-
 import Control.Exception
 
-import qualified Crypto.SecretSharing.Internal as SSSS (prime)
+import qualified Crypto.SecretSharing.Internal as SSS (prime)
 
-data SsssException
+data SssException
   = TooManyShares
   | RequireTooFewShares Word16
   | RequireTooManyShares Word16 Word16
@@ -22,10 +20,10 @@ data SsssException
   | StderrIsTTY
   deriving (Show, Typeable)
 
-instance Exception SsssException where
+instance Exception SssException where
   displayException = \case
     TooManyShares ->
-      "A secret can be broken into at most " ++ show (SSSS.prime - 1) ++
+      "A secret can be broken into at most " ++ show (SSS.prime - 1) ++
         " shares."
 
     RequireTooFewShares n ->

@@ -3,16 +3,16 @@
 module Main where
 
 import Import
-import Ssss
-import Ssss.Decode (decodeShare, fromShare)
-import Ssss.Encode (toShare)
-import Ssss.Utils (salt)
+import Sss
+import Sss.Decode (decodeShare, fromShare)
+import Sss.Encode (toShare)
+import Sss.Utils (salt)
 
 import Data.Validation (Validation(Success))
 import Test.QuickCheck hiding (Success)
 import Test.QuickCheck.Monadic
 
-import qualified Crypto.SecretSharing.Internal as SSSS
+import qualified Crypto.SecretSharing.Internal as SSS
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString64 as ByteString64
 import qualified Data.List.NonEmpty as NonEmpty
@@ -20,7 +20,7 @@ import qualified Data.Text.Lazy as LText (pack)
 import qualified Data.Text.Lazy.Encoding as LText (encodeUtf8)
 
 prime :: Word16
-prime = fromIntegral SSSS.prime
+prime = fromIntegral SSS.prime
 
 arbitraryShareNum :: Gen Word16
 arbitraryShareNum =

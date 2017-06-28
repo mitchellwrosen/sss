@@ -5,7 +5,7 @@ module Main where
 import Import
 
 import Args (Args(..), parseArgs)
-import Ssss
+import Sss
 
 import Control.Exception (Exception(..), catch)
 import Crypto.Cipher.Salsa.Streaming (SalsaException)
@@ -30,7 +30,7 @@ main =
       Encrypt a b c -> doEncrypt a b c
       Decrypt a b   -> doDecrypt a b)
     (\e -> do
-      hPutStrLn stderr (displayException (e :: SsssException))
+      hPutStrLn stderr (displayException (e :: SssException))
       exitFailure)
 
 doEncode :: Word16 -> Word16 -> Maybe Text -> IO ()
