@@ -12,6 +12,7 @@ import BytesClasses as X
 
 import Data.ByteString as X (ByteString)
 import Data.ByteString64 as X (ByteString64)
+import Data.IORef as X
 import Control.Applicative as X
 import Control.Exception as X (Exception, SomeException, evaluate)
 import Control.Monad as X

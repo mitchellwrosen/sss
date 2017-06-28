@@ -5,7 +5,7 @@ module Main where
 import Import
 
 import Args (Args(..), parseArgs)
-import Sss
+import Sss (SssException(..), decode, encode, encodeShare)
 
 import Control.Exception (Exception(..), catch)
 import Crypto.Cipher.Salsa.Streaming (SalsaException)
@@ -61,7 +61,11 @@ doEncrypt m n mbytes = do
   encrypt :: B.ByteString (ResourceT IO) () -> IO ()
   encrypt secret = do
     key <- Random.getRandomBytes 16 :: IO ByteString
-    runResourceT (B.hPut stderr (Salsa.combine rounds key nonce secret))
+
+    let ciphertext :: B.ByteString (ResourceT IO) ()
+        ciphertext = Salsa.combine rounds key nonce secret
+
+    runResourceT (B.hPut stderr ciphertext)
 
     shares <- encode m n (lazy key)
     mapM_ (putStrLn . encodeShare) shares
@@ -82,23 +86,6 @@ doDecrypt = \case
           (B.stdout (Salsa.combine rounds (strict key) nonce secret)))
         (\(_ :: SalsaException) -> throw MalformedKey)
 
--- Given a 'Text' that might be a file path, either call the continuation with
--- the contents of the file, or else the UTF8-encoded 'Text' itself.
-tryBinaryFile :: Text -> (ByteString -> IO r) -> IO r
-tryBinaryFile path k = (readFile (unpack path) >>= k) <|> k (encodeUtf8 path)
-
-tryBinaryStream :: Text -> (B.ByteString (ResourceT IO) () -> IO ()) -> IO ()
-tryBinaryStream (unpack -> path) k =
-  k (B.readFile path) <|> k (B.chunk (pack path))
-
--- Given a 'Text' that might be a file path, either call the continuation with
--- the contents of the file, or else the 'Text' itself.
-tryTextFile :: Text -> CIO Text
-tryTextFile path = CIO (\k -> (readFile (unpack path) >>= k) <|> k path)
-
-tryTextFiles :: Traversable t => t Text -> IO (t Text)
-tryTextFiles = lower . traverse tryTextFile
-
 -- Salsa rounds (8, 12, 20)
 rounds :: Int
 rounds = 20
@@ -106,6 +93,43 @@ rounds = 20
 -- Salsa nonce (64 or 96 bits)
 nonce :: ByteString
 nonce = ByteString.replicate 8 0
+
+--------------------------------------------------------------------------------
+-- We treat many strings as maybe file paths. These misc functions help with
+-- that (using the Alternative instance of IO to failover on IOError).
+
+-- Given a 'Text' that might be a file path, either call the continuation with
+-- the contents of the file, or else the UTF8-encoded 'Text' itself.
+tryBinaryFile :: Text -> (ByteString -> IO r) -> IO r
+tryBinaryFile path k = try1 <|> try2
+ where
+  try1 = do
+    contents <- readFile (unpack path)
+    k contents
+
+  try2 = k (encodeUtf8 path)
+
+tryBinaryStream :: Text -> (B.ByteString (ResourceT IO) () -> IO ()) -> IO ()
+tryBinaryStream (unpack -> path) k = try1 <|> try2
+ where
+  try1 = k (B.readFile path)
+  try2 = k (B.chunk (pack path))
+
+-- Given a 'Text' that might be a file path, either call the continuation with
+-- the contents of the file, or else the 'Text' itself.
+tryTextFile :: Text -> CIO Text
+tryTextFile path = CIO go
+ where
+  go k = try1 <|> try2
+   where
+    try1 = do
+      contents <- readFile (unpack path)
+      k contents
+
+    try2 = k path
+
+tryTextFiles :: Traversable t => t Text -> IO (t Text)
+tryTextFiles = lower . traverse tryTextFile
 
 --------------------------------------------------------------------------------
 -- Codensity IO

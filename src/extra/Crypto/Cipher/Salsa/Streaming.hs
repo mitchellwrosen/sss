@@ -27,19 +27,17 @@ combine
   -> B.ByteString m r
 combine r k n bytes = do
   -- Tease out any annoying impure exception thrown during 'initialize'
-  s <-
+  s0 <-
     catch
       (liftIO (evaluate (Salsa.initialize r k n)))
       (throwM . SalsaException)
 
-  _ :> x <-
-    B.chunkFoldM step (pure s) pure (hoist lift bytes)
+  ref <- liftIO (newIORef s0)
 
-  pure x
- where
-  step :: Salsa.State -> ByteString -> B.ByteString m Salsa.State
-  step s xs = do
-    B.chunk xs'
-    pure s'
-   where
-    (xs', s') = Salsa.combine s xs
+  B.chunkMapM
+    (\chunk -> do
+      s <- liftIO (readIORef ref)
+      let (chunk', s') = Salsa.combine s chunk
+      liftIO (writeIORef ref s')
+      pure chunk')
+    bytes
